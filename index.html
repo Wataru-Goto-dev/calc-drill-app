@@ -207,6 +207,7 @@
     padding: 16px; border-radius: 12px; border: 2px solid var(--border);
     font-size: 20px; font-weight: 700; background: var(--card); cursor: pointer;
     transition: all 0.1s; color: var(--text);
+    min-height: 56px; touch-action: manipulation;
   }
   .numpad-btn:hover { background: var(--bg); border-color: var(--primary); }
   .numpad-btn:active { transform: scale(0.95); }
@@ -278,8 +279,8 @@
       <div id="feedback-area"></div>
       <div class="answer-area">
         <input type="text" class="answer-input" id="answer-input"
-          inputmode="decimal" placeholder="答え"
-          onkeydown="handleKey(event)" oninput="handleInput(this)">
+          inputmode="none" readonly placeholder="答え"
+          onkeydown="handleKey(event)">
         <button class="btn btn-primary btn-sm" style="width:80px;margin:0;" onclick="submitAnswer()">OK</button>
       </div>
       <div class="numpad" id="numpad"></div>
@@ -675,7 +676,6 @@ function loadQuestion() {
   input.value = '';
   input.className = 'answer-input';
   input.disabled = false;
-  input.focus();
 
   // Per-problem timer
   state.perProblemSec = PROBLEM_TIME;
@@ -724,7 +724,6 @@ function padPress(v) {
   if (v === 'back') { input.value = input.value.slice(0, -1); return; }
   if (v === 'ok') { submitAnswer(); return; }
   input.value += v;
-  input.focus();
 }
 
 function normalizeAnswer(s) {
