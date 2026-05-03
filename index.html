@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>計算ドリル - 小学3〜6年生</title>
+<style>
+  :root {
+    --primary: #4f8ef7;
+    --success: #2ecc71;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+    --bg: #f0f4ff;
+    --card: #ffffff;
+    --text: #2c3e50;
+    --muted: #7f8c8d;
+    --border: #dde3f0;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .container { width: 100%; max-width: 600px; padding: 16px; }
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(79,142,247,0.1);
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 28px; text-align: center; color: var(--primary); margin-bottom: 4px; }
+  h2 { font-size: 22px; margin-bottom: 16px; }
+  h3 { font-size: 18px; margin-bottom: 12px; }
+  .subtitle { text-align: center; color: var(--muted); margin-bottom: 24px; font-size: 14px; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 12px 24px; border-radius: 12px; border: none;
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    transition: all 0.15s; width: 100%; margin-bottom: 10px;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: #3a7ae0; transform: translateY(-1px); }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+  .btn-outline:hover { background: var(--primary); color: #fff; }
+  .btn-sm { padding: 8px 16px; font-size: 14px; width: auto; margin-bottom: 0; }
+  .btn-danger { background: var(--danger); color: #fff; }
+
+  /* Grade selector */
+  .grade-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
+  .grade-btn {
+    aspect-ratio: 1; border-radius: 16px; border: 3px solid var(--border);
+    background: var(--card); font-size: 22px; font-weight: 800; cursor: pointer;
+    transition: all 0.15s; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px; color: var(--text);
+  }
+  .grade-btn span { font-size: 11px; font-weight: 500; color: var(--muted); }
+  .grade-btn:hover, .grade-btn.active {
+    border-color: var(--primary); background: #eef3ff;
+    transform: scale(1.05);
+  }
+  .grade-btn.selected { border-color: var(--primary); background: var(--primary); color: #fff; }
+  .grade-btn.selected span { color: rgba(255,255,255,0.8); }
+
+  /* Nav */
+  .nav {
+    display: flex; gap: 0; background: var(--card); border-radius: 12px;
+    padding: 4px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .nav-btn {
+    flex: 1; padding: 10px; border: none; background: transparent;
+    border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    color: var(--muted); transition: all 0.15s;
+  }
+  .nav-btn.active { background: var(--primary); color: #fff; }
+
+  /* Screen management */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* Timer */
+  .timer-bar {
+    height: 8px; background: var(--border); border-radius: 4px;
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .timer-fill {
+    height: 100%; background: var(--primary); border-radius: 4px;
+    transition: width 1s linear, background 0.3s;
+  }
+  .timer-fill.warn { background: var(--warning); }
+  .timer-fill.danger { background: var(--danger); }
+  .timer-text { text-align: right; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+
+  /* Problem */
+  .progress-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .progress-dots { display: flex; gap: 6px; }
+  .dot {
+    width: 28px; height: 8px; border-radius: 4px; background: var(--border);
+    transition: all 0.2s;
+  }
+  .dot.done-correct { background: var(--success); }
+  .dot.done-wrong { background: var(--danger); }
+  .dot.current { background: var(--primary); }
+
+  .category-badge {
+    font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+    background: #eef3ff; color: var(--primary);
+  }
+
+  .problem-box {
+    text-align: center; padding: 32px 16px; background: var(--bg);
+    border-radius: 12px; margin-bottom: 20px;
+  }
+  .problem-expr { font-size: 42px; font-weight: 800; letter-spacing: 2px; }
+  .problem-expr .blank {
+    display: inline-block; min-width: 64px; border-bottom: 4px solid var(--primary);
+    color: var(--primary);
+  }
+
+  /* Answer input */
+  .answer-area { display: flex; gap: 10px; margin-bottom: 16px; }
+  .answer-input {
+    flex: 1; padding: 14px 16px; font-size: 24px; font-weight: 700;
+    border: 2px solid var(--border); border-radius: 12px; text-align: center;
+    outline: none; transition: border-color 0.2s;
+  }
+  .answer-input:focus { border-color: var(--primary); }
+  .answer-input.correct { border-color: var(--success); background: #f0fff4; }
+  .answer-input.wrong { border-color: var(--danger); background: #fff5f5; }
+
+  /* Feedback */
+  .feedback {
+    padding: 14px; border-radius: 12px; text-align: center;
+    font-size: 16px; font-weight: 700; margin-bottom: 16px;
+    animation: fadeIn 0.2s;
+  }
+  .feedback.correct { background: #d4edda; color: #155724; }
+  .feedback.wrong { background: #f8d7da; color: #721c24; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Fraction display */
+  .fraction {
+    display: inline-flex; flex-direction: column; align-items: center;
+    vertical-align: middle; line-height: 1;
+  }
+  .fraction .num, .fraction .den { font-size: 28px; font-weight: 800; }
+  .fraction .bar { width: 100%; height: 3px; background: currentColor; margin: 2px 0; }
+
+  /* Results */
+  .score-circle {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: conic-gradient(var(--primary) 0%, var(--border) 0%);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px; position: relative;
+  }
+  .score-circle::before {
+    content: ''; position: absolute; width: 90px; height: 90px;
+    background: var(--card); border-radius: 50%;
+  }
+  .score-circle .score-num {
+    position: relative; font-size: 28px; font-weight: 800; color: var(--primary);
+  }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .stat-box { background: var(--bg); border-radius: 12px; padding: 14px; text-align: center; }
+  .stat-val { font-size: 22px; font-weight: 800; color: var(--primary); }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* Category breakdown */
+  .cat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .cat-label { width: 64px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .cat-bar-wrap { flex: 1; background: var(--border); border-radius: 4px; height: 16px; overflow: hidden; }
+  .cat-bar { height: 100%; border-radius: 4px; transition: width 0.6s; }
+  .cat-pct { width: 40px; font-size: 13px; font-weight: 700; text-align: right; }
+
+  /* History */
+  .history-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .history-item:last-child { border-bottom: none; }
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge-good { background: #d4edda; color: #155724; }
+  .badge-ok { background: #fff3cd; color: #856404; }
+  .badge-bad { background: #f8d7da; color: #721c24; }
+
+  /* Weak/strong areas */
+  .area-tag {
+    display: inline-block; padding: 6px 14px; border-radius: 20px;
+    font-size: 13px; font-weight: 700; margin: 4px;
+  }
+  .area-weak { background: #ffeaea; color: var(--danger); }
+  .area-strong { background: #eafff0; color: #27ae60; }
+
+  /* Numpad */
+  .numpad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
+  .numpad-btn {
+    padding: 16px; border-radius: 12px; border: 2px solid var(--border);
+    font-size: 20px; font-weight: 700; background: var(--card); cursor: pointer;
+    transition: all 0.1s; color: var(--text);
+  }
+  .numpad-btn:hover { background: var(--bg); border-color: var(--primary); }
+  .numpad-btn:active { transform: scale(0.95); }
+  .numpad-btn.special { font-size: 16px; background: #eef3ff; color: var(--primary); }
+  .numpad-btn.submit { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .numpad-btn.submit:hover { background: #3a7ae0; }
+
+  .hint { font-size: 13px; color: var(--muted); text-align: center; margin-top: 8px; }
+
+  /* Scroll */
+  .scroll-list { max-height: 320px; overflow-y: auto; }
+  .scroll-list::-webkit-scrollbar { width: 4px; }
+  .scroll-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .problem-expr { font-size: 32px; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen active">
+    <div style="text-align:center; padding: 32px 0 16px;">
+      <div style="font-size: 56px;">📐</div>
+      <h1>計算ドリル</h1>
+      <p class="subtitle">毎日10問で計算力アップ！</p>
+    </div>
+    <div class="card">
+      <h3>学年を選んでね</h3>
+      <div class="grade-grid">
+        <button class="grade-btn selected" onclick="selectGrade(3)" id="grade-3">
+          3<span>年生</span>
+        </button>
+        <button class="grade-btn" onclick="selectGrade(4)" id="grade-4">
+          4<span>年生</span>
+        </button>
+        <button class="grade-btn" onclick="selectGrade(5)" id="grade-5">
+          5<span>年生</span>
+        </button>
+        <button class="grade-btn" onclick="selectGrade(6)" id="grade-6">
+          6<span>年生</span>
+        </button>
+      </div>
+      <button class="btn btn-primary" onclick="startDrill()">▶ 今日のドリルを始める</button>
+      <button class="btn btn-outline" onclick="showScreen('analysis')">📊 成績を見る</button>
+    </div>
+    <div class="card" id="today-summary" style="display:none;">
+      <h3>📅 今日の成績</h3>
+      <div id="today-summary-content"></div>
+    </div>
+  </div>
+
+  <!-- DRILL SCREEN -->
+  <div id="screen-drill" class="screen">
+    <div class="card">
+      <div class="progress-info">
+        <div class="progress-dots" id="progress-dots"></div>
+        <span class="category-badge" id="cat-badge">-</span>
+      </div>
+      <div class="timer-text" id="timer-text">00:00</div>
+      <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+      <div class="problem-box">
+        <div class="problem-expr" id="problem-expr"></div>
+      </div>
+      <div id="feedback-area"></div>
+      <div class="answer-area">
+        <input type="text" class="answer-input" id="answer-input"
+          inputmode="decimal" placeholder="答え"
+          onkeydown="handleKey(event)" oninput="handleInput(this)">
+        <button class="btn btn-primary btn-sm" style="width:80px;margin:0;" onclick="submitAnswer()">OK</button>
+      </div>
+      <div class="numpad" id="numpad"></div>
+      <div class="hint" id="hint-text"></div>
+    </div>
+    <button class="btn btn-outline" onclick="confirmAbort()" style="opacity:0.6;font-size:13px;">中断する</button>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="screen-result" class="screen">
+    <div class="card" style="text-align:center;">
+      <h2 id="result-title">お疲れさま！</h2>
+      <div class="score-circle" id="result-circle">
+        <span class="score-num" id="result-score">-</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-val" id="result-correct">-</div>
+          <div class="stat-label">正解数</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="result-time">-</div>
+          <div class="stat-label">かかった時間</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="result-grade">-</div>
+          <div class="stat-label">学年</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="result-streak">-</div>
+          <div class="stat-label">連続正解</div>
+        </div>
+      </div>
+      <div id="result-cats" style="margin-bottom:16px;"></div>
+      <button class="btn btn-primary" onclick="startDrill()">🔄 もう一度やる</button>
+      <button class="btn btn-outline" onclick="showScreen('analysis')">📊 成績分析を見る</button>
+      <button class="btn btn-outline" onclick="showScreen('home')">🏠 ホームに戻る</button>
+    </div>
+  </div>
+
+  <!-- ANALYSIS SCREEN -->
+  <div id="screen-analysis" class="screen">
+    <div class="nav">
+      <button class="nav-btn active" id="nav-overview" onclick="switchAnalysisTab('overview')">概要</button>
+      <button class="nav-btn" id="nav-category" onclick="switchAnalysisTab('category')">カテゴリ別</button>
+      <button class="nav-btn" id="nav-history" onclick="switchAnalysisTab('history')">履歴</button>
+    </div>
+
+    <!-- Overview tab -->
+    <div id="tab-overview">
+      <div class="card">
+        <h3>📈 総合成績</h3>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-val" id="an-total-sessions">-</div>
+            <div class="stat-label">総回数</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="an-avg-score">-</div>
+            <div class="stat-label">平均スコア</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="an-best-score">-</div>
+            <div class="stat-label">最高スコア</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="an-streak">-</div>
+            <div class="stat-label">最長連続日</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🔥 苦手な分野</h3>
+        <div id="an-weak-areas"></div>
+      </div>
+      <div class="card">
+        <h3>⭐ 得意な分野</h3>
+        <div id="an-strong-areas"></div>
+      </div>
+    </div>
+
+    <!-- Category tab -->
+    <div id="tab-category" style="display:none;">
+      <div class="card">
+        <h3>📊 カテゴリ別 正解率</h3>
+        <div id="cat-chart"></div>
+      </div>
+    </div>
+
+    <!-- History tab -->
+    <div id="tab-history" style="display:none;">
+      <div class="card">
+        <h3>📋 過去の成績</h3>
+        <div class="scroll-list" id="history-list"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-outline" onclick="showScreen('home')">🏠 ホームに戻る</button>
+  </div>
+
+</div>
+
+<script>
+// ==================== STATE ====================
+let state = {
+  grade: 3,
+  problems: [],
+  current: 0,
+  answers: [],
+  startTime: null,
+  totalTime: 0,
+  sessionTimer: null,
+  perProblemTimer: null,
+  perProblemSec: 0,
+  feedbackShown: false,
+};
+
+const CATEGORIES = {
+  add: 'たし算',
+  sub: 'ひき算',
+  mul: 'かけ算',
+  div: 'わり算',
+  frac: '分数',
+  dec: '小数',
+};
+const CAT_COLORS = {
+  add: '#4f8ef7', sub: '#2ecc71', mul: '#f39c12',
+  div: '#e74c3c', frac: '#9b59b6', dec: '#1abc9c',
+};
+const PROBLEM_TIME = 60; // seconds per problem
+
+// ==================== GRADE & PROBLEM GENERATION ====================
+function selectGrade(g) {
+  state.grade = g;
+  [3,4,5,6].forEach(n => {
+    const el = document.getElementById('grade-'+n);
+    el.classList.toggle('selected', n === g);
+  });
+  saveLastGrade(g);
+}
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+function lcm(a, b) { return a * b / gcd(a, b); }
+
+function genProblem(grade, forceCat) {
+  // Category weights by grade
+  const weights = {
+    3: { add:3, sub:3, mul:3, div:1, frac:0, dec:0 },
+    4: { add:2, sub:2, mul:2, div:2, frac:1, dec:1 },
+    5: { add:1, sub:1, mul:2, div:2, frac:2, dec:2 },
+    6: { add:1, sub:1, mul:2, div:2, frac:2, dec:2 },
+  };
+  const w = weights[grade];
+  const pool = [];
+  Object.entries(w).forEach(([k,v]) => { for(let i=0;i<v;i++) pool.push(k); });
+  const cat = forceCat || pool[rand(0, pool.length-1)];
+  return makeProb(grade, cat);
+}
+
+function makeProb(grade, cat) {
+  switch(cat) {
+    case 'add': return makeAdd(grade);
+    case 'sub': return makeSub(grade);
+    case 'mul': return makeMul(grade);
+    case 'div': return makeDiv(grade);
+    case 'frac': return makeFrac(grade);
+    case 'dec': return makeDec(grade);
+    default: return makeAdd(grade);
+  }
+}
+
+function makeAdd(grade) {
+  let a, b;
+  if (grade === 3) { a = rand(10, 999); b = rand(10, 999 - a + 10); }
+  else if (grade === 4) { a = rand(100, 9999); b = rand(100, 9999); }
+  else { a = rand(1000, 99999); b = rand(1000, 99999); }
+  return { cat:'add', expr: `${a} ＋ ${b}`, answer: String(a+b), hint:'整数のたし算' };
+}
+function makeSub(grade) {
+  let a, b;
+  if (grade === 3) { a = rand(20, 999); b = rand(10, a-1); }
+  else if (grade === 4) { a = rand(200, 9999); b = rand(100, a-1); }
+  else { a = rand(2000, 99999); b = rand(1000, a-1); }
+  return { cat:'sub', expr: `${a} ー ${b}`, answer: String(a-b), hint:'整数のひき算' };
+}
+function makeMul(grade) {
+  let a, b;
+  if (grade === 3) { a = rand(2, 9); b = rand(2, 9); }
+  else if (grade === 4) { a = rand(2, 99); b = rand(2, 9); }
+  else { a = rand(2, 99); b = rand(2, 99); }
+  return { cat:'mul', expr: `${a} × ${b}`, answer: String(a*b), hint:'かけ算' };
+}
+function makeDiv(grade) {
+  let b, ans, a;
+  if (grade === 3) { b = rand(2, 9); ans = rand(2, 9); a = b * ans; }
+  else if (grade === 4) { b = rand(2, 9); ans = rand(10, 99); a = b * ans; }
+  else { b = rand(2, 99); ans = rand(2, 99); a = b * ans; }
+  return { cat:'div', expr: `${a} ÷ ${b}`, answer: String(ans), hint:'わり算（余りなし）' };
+}
+function makeFrac(grade) {
+  if (grade <= 3) {
+    // Simple: a/b + c/b (same denominator)
+    const d = rand(2, 9);
+    const n1 = rand(1, d-1);
+    const n2 = rand(1, d-n1);
+    return {
+      cat:'frac', cat_detail:'add',
+      expr: `<span class="fraction"><span class="num">${n1}</span><span class="bar"></span><span class="den">${d}</span></span> ＋ <span class="fraction"><span class="num">${n2}</span><span class="bar"></span><span class="den">${d}</span></span>`,
+      answer: fracSimplify(n1+n2, d),
+      hint: '同じ分母の分数のたし算',
+      isFrac: true,
+    };
+  }
+  if (grade === 4) {
+    // a/b - c/b
+    const d = rand(2, 9);
+    const n1 = rand(2, d);
+    const n2 = rand(1, n1-1);
+    return {
+      cat:'frac',
+      expr: `<span class="fraction"><span class="num">${n1}</span><span class="bar"></span><span class="den">${d}</span></span> ー <span class="fraction"><span class="num">${n2}</span><span class="bar"></span><span class="den">${d}</span></span>`,
+      answer: fracSimplify(n1-n2, d),
+      hint: '同じ分母の分数のひき算',
+      isFrac: true,
+    };
+  }
+  if (grade === 5) {
+    // Different denominators: a/b + c/d
+    const ops = ['+', '-'];
+    const op = ops[rand(0,1)];
+    const b = rand(2, 6);
+    let d;
+    do { d = rand(2, 6); } while (d === b);
+    const L = lcm(b, d);
+    const n1 = rand(1, b-1);
+    const n2 = rand(1, d-1);
+    const rn = op === '+' ? n1*L/b + n2*L/d : n1*L/b - n2*L/d;
+    if (rn <= 0) return makeFrac(5); // retry
+    const opSym = op === '+' ? '＋' : 'ー';
+    return {
+      cat:'frac',
+      expr: `<span class="fraction"><span class="num">${n1}</span><span class="bar"></span><span class="den">${b}</span></span> ${opSym} <span class="fraction"><span class="num">${n2}</span><span class="bar"></span><span class="den">${d}</span></span>`,
+      answer: fracSimplify(rn, L),
+      hint: '通分してから計算',
+      isFrac: true,
+    };
+  }
+  // Grade 6: multiplication/division of fractions
+  const ops6 = ['×', '÷'];
+  const op6 = ops6[rand(0,1)];
+  const n1 = rand(1, 5), d1 = rand(2, 6);
+  const n2 = rand(1, 5), d2 = rand(2, 6);
+  if (op6 === '×') {
+    return {
+      cat:'frac',
+      expr: `<span class="fraction"><span class="num">${n1}</span><span class="bar"></span><span class="den">${d1}</span></span> × <span class="fraction"><span class="num">${n2}</span><span class="bar"></span><span class="den">${d2}</span></span>`,
+      answer: fracSimplify(n1*n2, d1*d2),
+      hint: '分数どうしのかけ算',
+      isFrac: true,
+    };
+  } else {
+    return {
+      cat:'frac',
+      expr: `<span class="fraction"><span class="num">${n1}</span><span class="bar"></span><span class="den">${d1}</span></span> ÷ <span class="fraction"><span class="num">${n2}</span><span class="bar"></span><span class="den">${d2}</span></span>`,
+      answer: fracSimplify(n1*d2, d1*n2),
+      hint: '分数どうしのわり算',
+      isFrac: true,
+    };
+  }
+}
+function fracSimplify(n, d) {
+  if (d === 0) return '0';
+  const g = gcd(Math.abs(n), Math.abs(d));
+  const rn = n/g, rd = d/g;
+  if (rd === 1) return String(rn);
+  // mixed number if improper
+  if (rn >= rd) {
+    const whole = Math.floor(rn/rd);
+    const rem = rn % rd;
+    const g2 = gcd(rem, rd);
+    if (rem === 0) return String(whole);
+    return `${whole} ${rem/g2}/${rd/g2}`;
+  }
+  return `${rn}/${rd}`;
+}
+function makeDec(grade) {
+  if (grade <= 4) {
+    const a = (rand(10, 990) / 10);
+    const b = (rand(10, 990) / 10);
+    const ops = ['+', '-'];
+    const op = ops[rand(0,1)];
+    const res = op === '+' ? Math.round((a+b)*10)/10 : Math.round((Math.max(a,b)-Math.min(a,b))*10)/10;
+    const opSym = op === '+' ? '＋' : 'ー';
+    return { cat:'dec', expr:`${a.toFixed(1)} ${opSym} ${b.toFixed(1)}`, answer: String(res), hint:'小数のたし算・ひき算' };
+  }
+  if (grade === 5) {
+    const a = (rand(1, 99) / 10);
+    const b = rand(2, 9);
+    const ops = ['×', '÷'];
+    const op = ops[rand(0,1)];
+    if (op === '×') {
+      const res = Math.round(a*b*100)/100;
+      return { cat:'dec', expr:`${a.toFixed(1)} × ${b}`, answer: String(res), hint:'小数×整数' };
+    } else {
+      const res = Math.round(a/b*100)/100;
+      return { cat:'dec', expr:`${a.toFixed(1)} ÷ ${b}`, answer: String(res), hint:'小数÷整数' };
+    }
+  }
+  // Grade 6: decimal × decimal
+  const a = (rand(1, 99) / 10);
+  const b = (rand(1, 99) / 10);
+  const ops = ['×', '÷'];
+  const op = ops[rand(0,1)];
+  if (op === '×') {
+    const res = Math.round(a*b*100)/100;
+    return { cat:'dec', expr:`${a.toFixed(1)} × ${b.toFixed(1)}`, answer: String(res), hint:'小数どうしのかけ算' };
+  } else {
+    const ans = Math.round(a/b*100)/100;
+    return { cat:'dec', expr:`${a.toFixed(1)} ÷ ${b.toFixed(1)}`, answer: String(ans), hint:'小数どうしのわり算' };
+  }
+}
+
+function generateProblems(grade) {
+  // Ensure all categories appear at least once for grade >= 4
+  const cats = Object.keys(CATEGORIES);
+  const available = cats.filter(c => {
+    if (c === 'frac' && grade < 3) return false;
+    if (c === 'dec' && grade < 4) return false;
+    return true;
+  });
+  const problems = [];
+  // Shuffle available cats to guarantee coverage
+  const guaranteed = [...available].sort(() => Math.random()-0.5);
+  for (let i = 0; i < 10; i++) {
+    if (i < guaranteed.length) {
+      problems.push(makeProb(grade, guaranteed[i]));
+    } else {
+      problems.push(genProblem(grade));
+    }
+  }
+  // Shuffle
+  return problems.sort(() => Math.random()-0.5);
+}
+
+// ==================== DRILL FLOW ====================
+function startDrill() {
+  state.problems = generateProblems(state.grade);
+  state.current = 0;
+  state.answers = [];
+  state.startTime = Date.now();
+  state.totalTime = 0;
+  state.feedbackShown = false;
+  buildNumpad();
+  showScreen('drill');
+  loadQuestion();
+}
+
+function buildNumpad() {
+  const pad = document.getElementById('numpad');
+  const buttons = [
+    {l:'7', v:'7'}, {l:'8', v:'8'}, {l:'9', v:'9'}, {l:'⌫', v:'back', cls:'special'},
+    {l:'4', v:'4'}, {l:'5', v:'5'}, {l:'6', v:'6'}, {l:'.', v:'.'},
+    {l:'1', v:'1'}, {l:'2', v:'2'}, {l:'3', v:'3'}, {l:'/', v:'/'},
+    {l:'0', v:'0'}, {l:'-', v:'-'}, {l:' ', v:' ', cls:'special'}, {l:'OK', v:'ok', cls:'submit'},
+  ];
+  pad.innerHTML = buttons.map(b =>
+    `<button class="numpad-btn ${b.cls||''}" onclick="padPress('${b.v}')">${b.l}</button>`
+  ).join('');
+}
+
+function loadQuestion() {
+  clearInterval(state.perProblemTimer);
+  state.feedbackShown = false;
+  const p = state.problems[state.current];
+  const idx = state.current;
+
+  // Progress dots
+  const dots = document.getElementById('progress-dots');
+  dots.innerHTML = state.problems.map((_, i) => {
+    let cls = 'dot';
+    if (i < idx) cls += state.answers[i]?.correct ? ' done-correct' : ' done-wrong';
+    else if (i === idx) cls += ' current';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+
+  document.getElementById('cat-badge').textContent = CATEGORIES[p.cat];
+  document.getElementById('problem-expr').innerHTML = p.expr;
+  document.getElementById('hint-text').textContent = p.hint || '';
+  document.getElementById('feedback-area').innerHTML = '';
+
+  const input = document.getElementById('answer-input');
+  input.value = '';
+  input.className = 'answer-input';
+  input.disabled = false;
+  input.focus();
+
+  // Per-problem timer
+  state.perProblemSec = PROBLEM_TIME;
+  updateTimerUI();
+  state.perProblemTimer = setInterval(() => {
+    state.perProblemSec--;
+    updateTimerUI();
+    if (state.perProblemSec <= 0) {
+      clearInterval(state.perProblemTimer);
+      if (!state.feedbackShown) autoSubmit();
+    }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  const pct = (state.perProblemSec / PROBLEM_TIME) * 100;
+  const fill = document.getElementById('timer-fill');
+  fill.style.width = pct + '%';
+  fill.className = 'timer-fill' + (pct < 30 ? ' danger' : pct < 60 ? ' warn' : '');
+  const s = state.perProblemSec;
+  document.getElementById('timer-text').textContent =
+    `残り ${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+}
+
+function autoSubmit() {
+  if (state.feedbackShown) return;
+  const input = document.getElementById('answer-input');
+  if (!input.value.trim()) {
+    showFeedback(false, '時間切れ！正解は ' + state.problems[state.current].answer);
+    state.answers[state.current] = { correct: false, userAns: '(時間切れ)', timeExpired: true };
+    scheduleNext();
+  } else {
+    submitAnswer();
+  }
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter') submitAnswer();
+}
+function handleInput(el) {
+  // allow digits, decimal, slash, minus, space
+}
+function padPress(v) {
+  const input = document.getElementById('answer-input');
+  if (state.feedbackShown) { if (v === 'ok') nextQuestion(); return; }
+  if (v === 'back') { input.value = input.value.slice(0, -1); return; }
+  if (v === 'ok') { submitAnswer(); return; }
+  input.value += v;
+  input.focus();
+}
+
+function normalizeAnswer(s) {
+  return s.trim().replace(/\s+/g, ' ').replace(/[／]/g, '/').replace(/[－]/g, '-');
+}
+
+function submitAnswer() {
+  if (state.feedbackShown) return;
+  const input = document.getElementById('answer-input');
+  const raw = input.value;
+  const user = normalizeAnswer(raw);
+  const p = state.problems[state.current];
+  const correct = user === p.answer;
+  clearInterval(state.perProblemTimer);
+  state.feedbackShown = true;
+  state.answers[state.current] = { correct, userAns: raw, timeTaken: PROBLEM_TIME - state.perProblemSec };
+
+  input.className = 'answer-input ' + (correct ? 'correct' : 'wrong');
+  input.disabled = true;
+
+  if (correct) {
+    showFeedback(true, '正解！ 🎉');
+  } else {
+    showFeedback(false, `ざんねん… 正解は ${p.answer}`);
+  }
+  scheduleNext();
+}
+
+function showFeedback(correct, msg) {
+  const fb = document.getElementById('feedback-area');
+  fb.innerHTML = `<div class="feedback ${correct?'correct':'wrong'}">${msg}</div>`;
+}
+
+function scheduleNext() {
+  setTimeout(() => nextQuestion(), 1200);
+}
+
+function nextQuestion() {
+  state.current++;
+  if (state.current >= state.problems.length) {
+    finishDrill();
+  } else {
+    loadQuestion();
+  }
+}
+
+function finishDrill() {
+  clearInterval(state.perProblemTimer);
+  state.totalTime = Math.round((Date.now() - state.startTime) / 1000);
+  const correct = state.answers.filter(a => a.correct).length;
+  const result = buildResult(correct);
+  saveResult(result);
+  showResultScreen(result);
+}
+
+function buildResult(correct) {
+  const catStats = {};
+  state.problems.forEach((p, i) => {
+    if (!catStats[p.cat]) catStats[p.cat] = { correct: 0, total: 0 };
+    catStats[p.cat].total++;
+    if (state.answers[i]?.correct) catStats[p.cat].correct++;
+  });
+  return {
+    date: new Date().toISOString(),
+    grade: state.grade,
+    correct,
+    total: state.problems.length,
+    time: state.totalTime,
+    catStats,
+  };
+}
+
+// ==================== RESULT SCREEN ====================
+function showResultScreen(result) {
+  const pct = Math.round(result.correct / result.total * 100);
+  const deg = pct * 3.6;
+  document.getElementById('result-title').textContent =
+    pct >= 90 ? '完璧！🏆' : pct >= 70 ? 'よくできました！✨' : pct >= 50 ? 'もう少し！💪' : '練習しよう！📚';
+  document.getElementById('result-score').textContent = pct + '%';
+  document.getElementById('result-circle').style.background =
+    `conic-gradient(${pct>=70?'#2ecc71':pct>=50?'#f39c12':'#e74c3c'} ${deg}deg, #dde3f0 ${deg}deg)`;
+  document.getElementById('result-correct').textContent = `${result.correct}/${result.total}`;
+  document.getElementById('result-time').textContent = formatTime(result.time);
+  document.getElementById('result-grade').textContent = `${result.grade}年生`;
+
+  // Max streak
+  let streak = 0, maxStreak = 0;
+  state.answers.forEach(a => {
+    if (a?.correct) { streak++; maxStreak = Math.max(maxStreak, streak); }
+    else streak = 0;
+  });
+  document.getElementById('result-streak').textContent = maxStreak;
+
+  // Cat breakdown
+  const catHtml = Object.entries(result.catStats).map(([cat, st]) => {
+    const p = Math.round(st.correct/st.total*100);
+    return `<div class="cat-row">
+      <span class="cat-label">${CATEGORIES[cat]}</span>
+      <div class="cat-bar-wrap"><div class="cat-bar" style="width:${p}%;background:${CAT_COLORS[cat]}"></div></div>
+      <span class="cat-pct" style="color:${CAT_COLORS[cat]}">${p}%</span>
+    </div>`;
+  }).join('');
+  document.getElementById('result-cats').innerHTML = catHtml;
+
+  showScreen('result');
+}
+
+// ==================== ANALYSIS SCREEN ====================
+function showAnalysis() {
+  const history = loadHistory();
+  if (!history.length) {
+    ['an-total-sessions','an-avg-score','an-best-score','an-streak'].forEach(id =>
+      document.getElementById(id).textContent = '0'
+    );
+    document.getElementById('an-weak-areas').textContent = 'まだデータがありません';
+    document.getElementById('an-strong-areas').textContent = 'まだデータがありません';
+    document.getElementById('cat-chart').innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px">データなし</p>';
+    document.getElementById('history-list').innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px">履歴なし</p>';
+    return;
+  }
+
+  const scores = history.map(h => Math.round(h.correct/h.total*100));
+  const avg = Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
+  const best = Math.max(...scores);
+
+  document.getElementById('an-total-sessions').textContent = history.length;
+  document.getElementById('an-avg-score').textContent = avg + '%';
+  document.getElementById('an-best-score').textContent = best + '%';
+  document.getElementById('an-streak').textContent = calcStreak(history) + '日';
+
+  // Aggregate cat stats
+  const catAgg = {};
+  history.forEach(h => {
+    Object.entries(h.catStats).forEach(([cat, st]) => {
+      if (!catAgg[cat]) catAgg[cat] = { correct:0, total:0 };
+      catAgg[cat].correct += st.correct;
+      catAgg[cat].total += st.total;
+    });
+  });
+  const catPcts = Object.entries(catAgg)
+    .filter(([,st]) => st.total >= 3)
+    .map(([cat, st]) => ({ cat, pct: Math.round(st.correct/st.total*100) }))
+    .sort((a,b) => a.pct - b.pct);
+
+  const weak = catPcts.filter(c => c.pct < 60);
+  const strong = catPcts.filter(c => c.pct >= 80);
+
+  document.getElementById('an-weak-areas').innerHTML = weak.length
+    ? weak.map(c => `<span class="area-tag area-weak">${CATEGORIES[c.cat]} (${c.pct}%)</span>`).join('')
+    : '<span style="color:var(--muted)">苦手な分野はありません！</span>';
+  document.getElementById('an-strong-areas').innerHTML = strong.length
+    ? strong.map(c => `<span class="area-tag area-strong">${CATEGORIES[c.cat]} (${c.pct}%)</span>`).join('')
+    : '<span style="color:var(--muted)">まだデータが足りません</span>';
+
+  // Cat chart
+  const allCats = Object.keys(catAgg);
+  document.getElementById('cat-chart').innerHTML = allCats.map(cat => {
+    const st = catAgg[cat];
+    const p = Math.round(st.correct/st.total*100);
+    return `<div class="cat-row">
+      <span class="cat-label">${CATEGORIES[cat]}</span>
+      <div class="cat-bar-wrap"><div class="cat-bar" style="width:${p}%;background:${CAT_COLORS[cat]}"></div></div>
+      <span class="cat-pct" style="color:${CAT_COLORS[cat]}">${p}%</span>
+    </div>`;
+  }).join('');
+
+  // History
+  document.getElementById('history-list').innerHTML = [...history].reverse().map(h => {
+    const pct = Math.round(h.correct/h.total*100);
+    const cls = pct>=80?'badge-good':pct>=60?'badge-ok':'badge-bad';
+    const d = new Date(h.date);
+    const ds = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    return `<div class="history-item">
+      <span>${ds} <span style="color:var(--muted);font-size:12px">${h.grade}年生</span></span>
+      <span>${formatTime(h.time)}</span>
+      <span class="badge ${cls}">${h.correct}/${h.total} (${pct}%)</span>
+    </div>`;
+  }).join('');
+}
+
+function calcStreak(history) {
+  // Days with at least one session
+  const days = [...new Set(history.map(h => h.date.slice(0,10)))].sort().reverse();
+  if (!days.length) return 0;
+  let streak = 0;
+  let cur = new Date(days[0]);
+  for (let d of days) {
+    const dd = new Date(d);
+    const diff = Math.round((cur - dd) / 86400000);
+    if (diff <= 1) { streak++; cur = dd; }
+    else break;
+  }
+  return streak;
+}
+
+function switchAnalysisTab(tab) {
+  ['overview','category','history'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('nav-'+t).classList.toggle('active', t === tab);
+  });
+}
+
+// ==================== STORAGE ====================
+const STORAGE_KEY = 'calc_drill_history';
+const MAX_RECORDS = 30;
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function saveResult(result) {
+  const h = loadHistory();
+  h.push(result);
+  if (h.length > MAX_RECORDS) h.splice(0, h.length - MAX_RECORDS);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(h));
+}
+function saveLastGrade(g) {
+  localStorage.setItem('calc_drill_grade', String(g));
+}
+function loadLastGrade() {
+  return parseInt(localStorage.getItem('calc_drill_grade') || '3');
+}
+
+// ==================== SCREEN MANAGEMENT ====================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  if (name === 'analysis') showAnalysis();
+  if (name === 'home') loadHomeData();
+}
+
+function loadHomeData() {
+  const history = loadHistory();
+  const today = new Date().toISOString().slice(0,10);
+  const todayH = history.filter(h => h.date.slice(0,10) === today);
+  const box = document.getElementById('today-summary');
+  if (todayH.length) {
+    const best = todayH.reduce((a,b) => a.correct >= b.correct ? a : b);
+    const pct = Math.round(best.correct/best.total*100);
+    document.getElementById('today-summary-content').innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-val">${todayH.length}回</div><div class="stat-label">本日の回数</div></div>
+        <div class="stat-box"><div class="stat-val" style="color:${pct>=70?'var(--success)':'var(--warning)'}">${pct}%</div><div class="stat-label">最高スコア</div></div>
+      </div>`;
+    box.style.display = 'block';
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+function confirmAbort() {
+  if (confirm('ドリルを中断しますか？')) {
+    clearInterval(state.perProblemTimer);
+    showScreen('home');
+  }
+}
+
+function formatTime(sec) {
+  return `${Math.floor(sec/60)}分${sec%60}秒`;
+}
+
+// ==================== INIT ====================
+(function init() {
+  const g = loadLastGrade();
+  selectGrade(g);
+  loadHomeData();
+})();
+</script>
+</body>
+</html>
