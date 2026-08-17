@@ -84,6 +84,7 @@
     border-bottom: 1px dashed var(--line); cursor: pointer;
   }
   .check-row:last-child { border-bottom: none; }
+  .check-row.disabled { opacity: .4; pointer-events: none; }
   .checkbox {
     width: 19px; height: 19px; border: 1.5px solid var(--ink); border-radius: 5px; flex: none;
     display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff;
@@ -217,7 +218,10 @@
   .sheet-problems { display: grid; gap: 9px 18px; margin-top: 13px; }
   .sheet-problems.cols-1 { grid-template-columns: 1fr; }
   .sheet-problems.cols-2 { grid-template-columns: 1fr 1fr; }
-  .problem { font-size: 12px; display: flex; align-items: baseline; gap: 6px; }
+  .problem { font-size: 12px; }
+  .problem.with-space { display: flex; flex-direction: column; gap: 6px; }
+  .problem-line { display: flex; align-items: baseline; gap: 6px; }
+  .problem-space { border: 1px dashed var(--line); border-radius: 6px; min-height: 50px; }
   .qnum {
     display: inline-flex; align-items: center; justify-content: center;
     width: 16px; height: 16px; border: 1px solid var(--ink); border-radius: 50%;
@@ -253,6 +257,7 @@
     .sheet-wrap { background: #fff; padding: 0; gap: 0; display: block; }
     .sheet { border: none; padding: 0; page-break-after: always; }
     .sheet:last-child { page-break-after: avoid; }
+    .problem { break-inside: avoid; }
   }
 </style>
 </head>
@@ -345,6 +350,10 @@
             <div class="check-row" onclick="toggleTime()">
               <span style="flex:1;"><span class="check-text">目標／実測タイム欄</span><br><span class="toggle-desc">もくひょう ◯分・かかった時間</span></span>
               <span class="switch" id="time-switch"><span class="switch-knob"></span></span>
+            </div>
+            <div class="check-row" id="workspace-row" onclick="toggleWorkspace()">
+              <span style="flex:1;"><span class="check-text">計算スペース</span><br><span class="toggle-desc">式の下に筆算用のあきをつくる</span></span>
+              <span class="switch" id="workspace-switch"><span class="switch-knob"></span></span>
             </div>
           </div>
         </div>
@@ -513,6 +522,7 @@ let state = {
   columns: 2,
   showNameDate: true,
   showTime: true,
+  showWorkspace: true,
   answerMode: 'with',
   sets: 3,
   step: 1,
@@ -571,6 +581,7 @@ function setCount(n) { state.count = n; renderAll(); saveSettings(); }
 function setColumns(n) { state.columns = n; renderAll(); saveSettings(); }
 function toggleNameDate() { state.showNameDate = !state.showNameDate; renderAll(); saveSettings(); }
 function toggleTime() { state.showTime = !state.showTime; renderAll(); saveSettings(); }
+function toggleWorkspace() { state.showWorkspace = !state.showWorkspace; renderAll(); saveSettings(); }
 function setAnswerMode(mode) { state.answerMode = mode; renderAll(); saveSettings(); }
 function changeSets(delta) { state.sets = Math.min(5, Math.max(1, state.sets + delta)); renderAll(); saveSettings(); }
 
@@ -616,11 +627,13 @@ function renderAll() {
     c.classList.toggle('selected', c.dataset.format === state.format);
   });
   document.getElementById('review-row').classList.toggle('disabled', state.format === 'hyaku');
+  document.getElementById('workspace-row').classList.toggle('disabled', state.format === 'hyaku');
   document.getElementById('list-only-fields').style.display = state.format === 'hyaku' ? 'none' : 'flex';
 
   setSwitch('review-switch', state.reviewMix);
   setSwitch('namedate-switch', state.showNameDate);
   setSwitch('time-switch', state.showTime);
+  setSwitch('workspace-switch', state.showWorkspace);
 
   document.querySelectorAll('.count-btn').forEach(b => {
     b.classList.toggle('selected', Number(b.dataset.count) === state.count);
@@ -724,7 +737,11 @@ function buildProblemSheetHtml(setIndex, problems, pageNo, totalPages) {
     </div>
     ${renderTimeRow()}
     <div class="sheet-problems cols-${state.columns}">
-      ${problems.map((p, i) => `<div class="problem">${circleTag(i + 1)}<span>${p.expr}＝</span></div>`).join('')}
+      ${problems.map((p, i) => {
+        const line = `<div class="problem-line">${circleTag(i + 1)}<span>${p.expr}＝</span></div>`;
+        const space = state.showWorkspace ? `<div class="problem-space"></div>` : '';
+        return `<div class="problem${state.showWorkspace ? ' with-space' : ''}">${line}${space}</div>`;
+      }).join('')}
     </div>
     <div class="sheet-page-num">— ${pageNo} / ${totalPages} —</div>
   </div>`;
@@ -813,7 +830,7 @@ function saveSettings() {
   const toSave = {
     grade: state.grade, units: Array.from(state.units), reviewMix: state.reviewMix,
     format: state.format, hyakuUnit: state.hyakuUnit, count: state.count, columns: state.columns,
-    showNameDate: state.showNameDate, showTime: state.showTime,
+    showNameDate: state.showNameDate, showTime: state.showTime, showWorkspace: state.showWorkspace,
     answerMode: state.answerMode, sets: state.sets,
   };
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(toSave)); } catch (e) {}
@@ -832,6 +849,7 @@ function loadSettings() {
     state.columns = saved.columns === 1 ? 1 : 2;
     state.showNameDate = saved.showNameDate !== false;
     state.showTime = saved.showTime !== false;
+    state.showWorkspace = saved.showWorkspace !== false;
     state.answerMode = saved.answerMode === 'none' ? 'none' : 'with';
     state.sets = Math.min(5, Math.max(1, saved.sets || 3));
   } catch (e) {}
