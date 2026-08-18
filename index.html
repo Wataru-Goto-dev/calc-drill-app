@@ -276,8 +276,8 @@
     </div>
 
     <div class="step-chrome">
-      <span class="step-item"><span class="step-circle" data-step="1">1</span><span class="step-label" data-step="1">学年と単元</span></span>
-      <span class="step-item"><span class="step-circle" data-step="2">2</span><span class="step-label" data-step="2">出しかた</span></span>
+      <span class="step-item"><span class="step-circle" data-step="1">1</span><span class="step-label" data-step="1">出しかた</span></span>
+      <span class="step-item"><span class="step-circle" data-step="2">2</span><span class="step-label" data-step="2">学年と単元</span></span>
       <span class="step-item"><span class="step-circle" data-step="3">3</span><span class="step-label" data-step="3">印刷の設定</span></span>
     </div>
     <div class="progress-bar"><div class="progress-bar-fill" id="progress-fill"></div></div>
@@ -285,30 +285,6 @@
     <div class="settings">
 
       <div class="setting-group current" data-step="1">
-        <div>
-          <div class="field-label">学年</div>
-          <div class="segmented">
-            <button class="grade-btn" data-grade="3" onclick="selectGrade(3)">3年生</button>
-            <button class="grade-btn" data-grade="4" onclick="selectGrade(4)">4年生</button>
-          </div>
-        </div>
-        <div>
-          <div class="field-label">
-            <span><span id="unit-section-label">単元（複数えらべる）</span> <span id="unit-count" style="color:#aaa;"></span></span>
-            <span id="unit-bulk-btns" style="display:flex;gap:8px;">
-              <button class="pill-btn" onclick="selectAllUnits()">全選択</button>
-              <button class="pill-btn muted" onclick="deselectAllUnits()">全解除</button>
-            </span>
-          </div>
-          <div class="unit-panel" id="unit-list"></div>
-        </div>
-        <div class="toggle-row" id="review-row" onclick="toggleReviewMix()">
-          <span><span class="check-text">まとめ復習モード</span><br><span class="toggle-desc">既習単元もランダムに混ぜる</span></span>
-          <span class="switch" id="review-switch"><span class="switch-knob"></span></span>
-        </div>
-      </div>
-
-      <div class="setting-group" data-step="2">
         <div>
           <div class="field-label">出題形式</div>
           <div class="format-cards">
@@ -336,6 +312,30 @@
               <button class="col-btn" data-col="2" onclick="setColumns(2)">2列</button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div class="setting-group" data-step="2">
+        <div>
+          <div class="field-label">学年</div>
+          <div class="segmented">
+            <button class="grade-btn" data-grade="3" onclick="selectGrade(3)">3年生</button>
+            <button class="grade-btn" data-grade="4" onclick="selectGrade(4)">4年生</button>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">
+            <span><span id="unit-section-label">単元（複数えらべる）</span> <span id="unit-count" style="color:#aaa;"></span></span>
+            <span id="unit-bulk-btns" style="display:flex;gap:8px;">
+              <button class="pill-btn" onclick="selectAllUnits()">全選択</button>
+              <button class="pill-btn muted" onclick="deselectAllUnits()">全解除</button>
+            </span>
+          </div>
+          <div class="unit-panel" id="unit-list"></div>
+        </div>
+        <div class="toggle-row" id="review-row" onclick="toggleReviewMix()">
+          <span><span class="check-text">まとめ復習モード</span><br><span class="toggle-desc">既習単元もランダムに混ぜる</span></span>
+          <span class="switch" id="review-switch"><span class="switch-knob"></span></span>
         </div>
       </div>
 
