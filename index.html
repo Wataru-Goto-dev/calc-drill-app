@@ -206,28 +206,28 @@
   }
   .sheet-head {
     display: flex; justify-content: space-between; align-items: flex-start;
-    border-bottom: 2px solid var(--ink); padding-bottom: 7px;
+    border-bottom: 2px solid var(--ink); padding-bottom: 5px;
   }
   .sheet-title { font-size: 14px; font-weight: 500; }
   .sheet-sub { font-size: 10px; margin-top: 3px; color: #333; }
   .sheet-head-right { text-align: right; font-size: 9.5px; line-height: 1.9; white-space: nowrap; }
   .sheet-time-row {
-    display: flex; gap: 16px; font-size: 9.5px; margin-top: 6px;
-    padding-bottom: 6px; border-bottom: 1px solid var(--ink);
+    display: flex; gap: 16px; font-size: 9.5px; margin-top: 4px;
+    padding-bottom: 4px; border-bottom: 1px solid var(--ink);
   }
-  .sheet-problems { display: grid; gap: 9px 18px; margin-top: 13px; }
+  .sheet-problems { display: grid; gap: 6px 18px; margin-top: 10px; }
   .sheet-problems.cols-1 { grid-template-columns: 1fr; }
   .sheet-problems.cols-2 { grid-template-columns: 1fr 1fr; }
   .problem { font-size: 12px; }
-  .problem.with-space { display: flex; flex-direction: column; gap: 6px; }
+  .problem.with-space { display: flex; flex-direction: column; gap: 4px; }
   .problem-line { display: flex; align-items: baseline; gap: 6px; }
-  .problem-space { border: 1px dashed var(--line); border-radius: 6px; min-height: 74px; }
+  .problem-space { border: 1px dashed var(--line); border-radius: 6px; min-height: 58px; }
   .qnum {
     display: inline-flex; align-items: center; justify-content: center;
     width: 16px; height: 16px; border: 1px solid var(--ink); border-radius: 50%;
     font-size: 8.5px; flex: none;
   }
-  .sheet-page-num { text-align: center; font-size: 8px; color: #666; margin-top: 16px; }
+  .sheet-page-num { text-align: center; font-size: 8px; color: #666; margin-top: 10px; }
 
   .hyaku-grid { display: grid; grid-template-columns: repeat(11, 1fr); border: 1.5px solid var(--ink); margin-top: 13px; }
   .hyaku-cell {
@@ -249,7 +249,7 @@
   }
 
   @media print {
-    @page { size: A4; margin: 15mm; }
+    @page { size: A4; margin: 12mm; }
     body { background: #fff; }
     .screen { display: none !important; }
     #screen-preview { display: block !important; }
