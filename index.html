@@ -228,6 +228,11 @@
     font-size: 8.5px; flex: none;
   }
   .sheet-page-num { text-align: center; font-size: 8px; color: #666; margin-top: 10px; }
+  .stamp-row {
+    text-align: center; font-size: 10.5px; color: #555; margin-top: 8px;
+    letter-spacing: 1px;
+  }
+  .stamp-row .stars { font-size: 15px; letter-spacing: 4px; margin-left: 4px; }
 
   .hyaku-grid { display: grid; grid-template-columns: repeat(11, 1fr); border: 1.5px solid var(--ink); margin-top: 13px; }
   .hyaku-cell {
@@ -292,9 +297,18 @@
               <div class="fc-title">一覧形式</div><div class="fc-desc">縦一列の一問一答</div>
             </div>
             <div class="format-card" data-format="hyaku" onclick="setFormat('hyaku')">
-              <div class="fc-title">百ます計算</div><div class="fc-desc">たし算・ひき算・かけ算のみ</div>
+              <div class="fc-title">百ます計算</div><div class="fc-desc">たし算・ひき算・かけ算のみ／2分クリアをめざそう</div>
             </div>
           </div>
+        </div>
+        <div id="level-field">
+          <div class="field-label">れんしゅうレベル</div>
+          <div class="segmented">
+            <button class="level-btn" data-level="1" onclick="setLevel(1)">🌱やさしい</button>
+            <button class="level-btn" data-level="2" onclick="setLevel(2)">🌟ふつう</button>
+            <button class="level-btn" data-level="3" onclick="setLevel(3)">🔥むずかしい</button>
+          </div>
+          <div class="toggle-desc" id="level-hint" style="margin-top:7px;"></div>
         </div>
         <div class="row-2" id="list-only-fields">
           <div>
@@ -354,6 +368,10 @@
             <div class="check-row" id="workspace-row" onclick="toggleWorkspace()">
               <span style="flex:1;"><span class="check-text">計算スペース</span><br><span class="toggle-desc">式の下に筆算用のあきをつくる</span></span>
               <span class="switch" id="workspace-switch"><span class="switch-knob"></span></span>
+            </div>
+            <div class="check-row" onclick="toggleStamp()">
+              <span style="flex:1;"><span class="check-text">がんばったねスタンプ欄</span><br><span class="toggle-desc">できたら色をぬる、ごほうび欄</span></span>
+              <span class="switch" id="stamp-switch"><span class="switch-knob"></span></span>
             </div>
           </div>
         </div>
@@ -442,61 +460,82 @@ const UNIT_DEFS = [
 function unitDef(key) { return UNIT_DEFS.find(u => u.key === key); }
 function unitsForGrade(grade) { return UNIT_DEFS.filter(u => u.grades.includes(grade)); }
 
+// ==================== れんしゅうレベル（陰山メソッドの「桁数を1段ずつ上げる」考え方を踏襲） ====================
+// 1:やさしい（一段やさしく） 2:ふつう（これまでの標準） 3:むずかしい（一段チャレンジ）
+const LEVEL_LABELS = { 1: '🌱やさしい', 2: '🌟ふつう', 3: '🔥むずかしい' };
+const LEVEL_HINTS = {
+  1: 'じぶんのペースでOK！ゆっくり、ていねいに。',
+  2: 'めやす：まちがえずにできたら、つぎのレベルへ！',
+  3: 'はやさと正確さ、りょうほうチャレンジ！',
+};
+const LEVEL_RANGES = {
+  add:   { 3: { 1: [10, 99],    2: [100, 999],   3: [1000, 9999] },
+           4: { 1: [100, 999],  2: [1000, 9999], 3: [10000, 99999] } },
+  sub:   { 3: { 1: [10, 99],    2: [200, 999],   3: [1000, 9999] },
+           4: { 1: [100, 999],  2: [2000, 9999], 3: [10000, 99999] } },
+  mul:   { 3: { 1: [2, 9, 2, 5],    2: [2, 9, 2, 9],     3: [10, 99, 2, 9] },
+           4: { 1: [10, 99, 2, 9],  2: [10, 999, 2, 99], 3: [100, 999, 10, 99] } },
+  div:   { 3: { 1: [2, 5, 2, 5],  2: [2, 9, 2, 9],   3: [2, 9, 2, 20] },
+           4: { 1: [2, 9, 2, 9],  2: [2, 99, 2, 99], 3: [10, 99, 10, 99] } },
+  round: { 1: [100, 999], 2: [100, 9999], 3: [1000, 99999] },
+  dec:   { 1: [10, 90], 2: [10, 990], 3: [10, 1990] },
+  frac:  { 1: [2, 4], 2: [2, 9], 3: [2, 12] },
+};
+
 // ==================== 問題生成（単元別） ====================
-function makeAdd(grade) {
-  let a, b;
-  if (grade === 3) { a = rand(100, 999); b = rand(100, 999); }
-  else { a = rand(1000, 9999); b = rand(1000, 9999); }
+function makeAdd(grade, level) {
+  const [min, max] = LEVEL_RANGES.add[grade][level];
+  const a = rand(min, max), b = rand(min, max);
   return { expr: `${a} ＋ ${b}`, answer: String(a + b) };
 }
-function makeSub(grade) {
-  let a, b;
-  if (grade === 3) { a = rand(200, 999); b = rand(100, a - 1); }
-  else { a = rand(2000, 9999); b = rand(1000, a - 1); }
+function makeSub(grade, level) {
+  const [min, max] = LEVEL_RANGES.sub[grade][level];
+  const a = rand(min, max);
+  const b = rand(min, Math.max(min, a - 1));
   return { expr: `${a} － ${b}`, answer: String(a - b) };
 }
-function makeMul(grade) {
-  let a, b;
-  if (grade === 3) { a = rand(2, 9); b = rand(2, 9); }
-  else { a = rand(10, 999); b = rand(2, 99); }
+function makeMul(grade, level) {
+  const [aMin, aMax, bMin, bMax] = LEVEL_RANGES.mul[grade][level];
+  const a = rand(aMin, aMax), b = rand(bMin, bMax);
   return { expr: `${a} × ${b}`, answer: String(a * b) };
 }
-function divParams(grade) {
-  // 3年生: 除数・商とも1桁。4年生: 除数1桁（商2桁）と除数2桁（商1桁）を半々で出題
-  if (grade === 3) return { b: rand(2, 9), q: rand(2, 9) };
-  if (Math.random() < 0.5) return { b: rand(10, 99), q: rand(2, 9) };
-  return { b: rand(2, 9), q: rand(10, 99) };
+function divParams(grade, level) {
+  const [bMin, bMax, qMin, qMax] = LEVEL_RANGES.div[grade][level];
+  return { b: rand(bMin, bMax), q: rand(qMin, qMax) };
 }
-function makeDivNoRem(grade) {
-  const { b, q } = divParams(grade);
+function makeDivNoRem(grade, level) {
+  const { b, q } = divParams(grade, level);
   const a = b * q;
   return { expr: `${a} ÷ ${b}`, answer: String(q) };
 }
-function makeDivRem(grade) {
-  const { b, q } = divParams(grade);
-  const r = rand(1, b - 1);
+function makeDivRem(grade, level) {
+  const { b, q } = divParams(grade, level);
+  const r = rand(1, Math.max(1, b - 1));
   const a = b * q + r;
   return { expr: `${a} ÷ ${b}`, answer: `${q} あまり ${r}` };
 }
-function makeRound(grade) {
-  const n = rand(100, 9999);
+function makeRound(grade, level) {
+  const [min, max] = LEVEL_RANGES.round[level];
+  const n = rand(min, max);
   const useHundred = Math.random() < 0.5;
   const placeLabel = useHundred ? '百の位' : '十の位';
   const unit = useHundred ? 100 : 10;
   const rounded = Math.round(n / unit) * unit;
   return { expr: `${n} を四捨五入して、${placeLabel}までのがい数にすると`, answer: String(rounded) };
 }
-function makeDec(grade) {
-  const p = rand(10, 990) / 10;
-  const q = rand(10, 990) / 10;
+function makeDec(grade, level) {
+  const [min, max] = LEVEL_RANGES.dec[level];
+  const p = rand(min, max) / 10;
+  const q = rand(min, max) / 10;
   const isAdd = Math.random() < 0.5;
   let x = p, y = q, op = '＋';
   if (!isAdd) { op = '－'; x = Math.max(p, q); y = Math.min(p, q); }
   const res = isAdd ? Math.round((x + y) * 10) / 10 : Math.round((x - y) * 10) / 10;
   return { expr: `${x.toFixed(1)} ${op} ${y.toFixed(1)}`, answer: String(res) };
 }
-function makeFrac(grade) {
-  const d = rand(2, 9);
+function makeFrac(grade, level) {
+  const [dMin, dMax] = LEVEL_RANGES.frac[level];
+  const d = rand(dMin, dMax);
   if (grade === 3) {
     const n1 = rand(1, d - 1);
     const n2 = rand(1, d - n1);
@@ -518,11 +557,13 @@ let state = {
   reviewMix: false,
   format: 'list',
   hyakuUnit: 'add',
+  level: 2,
   count: 20,
   columns: 2,
   showNameDate: true,
   showTime: true,
   showWorkspace: true,
+  showStamp: true,
   answerMode: 'with',
   sets: 3,
   step: 1,
@@ -577,11 +618,13 @@ function deselectAllUnits() {
 }
 function toggleReviewMix() { state.reviewMix = !state.reviewMix; renderAll(); saveSettings(); }
 function setFormat(fmt) { state.format = fmt; renderUnitCheckboxes(); renderAll(); saveSettings(); }
+function setLevel(n) { state.level = n; renderAll(); saveSettings(); }
 function setCount(n) { state.count = n; renderAll(); saveSettings(); }
 function setColumns(n) { state.columns = n; renderAll(); saveSettings(); }
 function toggleNameDate() { state.showNameDate = !state.showNameDate; renderAll(); saveSettings(); }
 function toggleTime() { state.showTime = !state.showTime; renderAll(); saveSettings(); }
 function toggleWorkspace() { state.showWorkspace = !state.showWorkspace; renderAll(); saveSettings(); }
+function toggleStamp() { state.showStamp = !state.showStamp; renderAll(); saveSettings(); }
 function setAnswerMode(mode) { state.answerMode = mode; renderAll(); saveSettings(); }
 function changeSets(delta) { state.sets = Math.min(5, Math.max(1, state.sets + delta)); renderAll(); saveSettings(); }
 
@@ -629,11 +672,17 @@ function renderAll() {
   document.getElementById('review-row').classList.toggle('disabled', state.format === 'hyaku');
   document.getElementById('workspace-row').classList.toggle('disabled', state.format === 'hyaku');
   document.getElementById('list-only-fields').style.display = state.format === 'hyaku' ? 'none' : 'flex';
+  document.getElementById('level-field').style.display = state.format === 'hyaku' ? 'none' : 'block';
+  document.querySelectorAll('.level-btn').forEach(b => {
+    b.classList.toggle('selected', Number(b.dataset.level) === state.level);
+  });
+  document.getElementById('level-hint').textContent = LEVEL_HINTS[state.level];
 
   setSwitch('review-switch', state.reviewMix);
   setSwitch('namedate-switch', state.showNameDate);
   setSwitch('time-switch', state.showTime);
   setSwitch('workspace-switch', state.showWorkspace);
+  setSwitch('stamp-switch', state.showStamp);
 
   document.querySelectorAll('.count-btn').forEach(b => {
     b.classList.toggle('selected', Number(b.dataset.count) === state.count);
@@ -684,7 +733,7 @@ function generateListProblems(count, units) {
   const problems = [];
   for (let i = 0; i < count; i++) {
     const key = pool[rand(0, pool.length - 1)];
-    problems.push(GENERATORS[key](state.grade));
+    problems.push(GENERATORS[key](state.grade, state.level));
   }
   return problems;
 }
@@ -724,15 +773,20 @@ function renderTimeRow() {
   return state.showTime
     ? `<div class="sheet-time-row"><span>もくひょう　＿＿分</span><span>かかった時間　＿＿分＿＿秒</span></div>` : '';
 }
+function renderStampBox() {
+  return state.showStamp
+    ? `<div class="stamp-row">がんばったね！できたら色をぬろう<span class="stars">☆ ☆ ☆</span></div>` : '';
+}
 function unitTitleForSet() {
   if (state.reviewMix && state.format === 'list') return `まとめ復習（${state.grade}年生までの単元）`;
   const units = effectiveUnitsForGrade();
   return units.map(k => unitDef(k).label).join('・');
 }
 function buildProblemSheetHtml(setIndex, problems, pageNo, totalPages) {
+  const levelText = ` ／ ${LEVEL_LABELS[state.level]}`;
   return `<div class="sheet">
     <div class="sheet-head">
-      <div><div class="sheet-title">${unitTitleForSet()}</div><div class="sheet-sub">${state.grade}年生 ／ ${setIndex}日目</div></div>
+      <div><div class="sheet-title">${unitTitleForSet()}</div><div class="sheet-sub">${state.grade}年生 ／ ${setIndex}日目${levelText}</div></div>
       ${renderNameDateBlock()}
     </div>
     ${renderTimeRow()}
@@ -743,6 +797,7 @@ function buildProblemSheetHtml(setIndex, problems, pageNo, totalPages) {
         return `<div class="problem${state.showWorkspace ? ' with-space' : ''}">${line}${space}</div>`;
       }).join('')}
     </div>
+    ${renderStampBox()}
     <div class="sheet-page-num">— ${pageNo} / ${totalPages} —</div>
   </div>`;
 }
@@ -756,11 +811,12 @@ function buildHyakuSheetHtml(setIndex, grid, pageNo, totalPages) {
   });
   return `<div class="sheet">
     <div class="sheet-head">
-      <div><div class="sheet-title">百ます計算（${grid.def.label}）</div><div class="sheet-sub">${state.grade}年生 ／ ${setIndex}日目</div></div>
+      <div><div class="sheet-title">百ます計算（${grid.def.label}）</div><div class="sheet-sub">${state.grade}年生 ／ ${setIndex}日目 ／ 目ひょう2分！</div></div>
       ${renderNameDateBlock()}
     </div>
     ${renderTimeRow()}
     <div class="hyaku-grid">${cells.join('')}</div>
+    ${renderStampBox()}
     <div class="sheet-page-num">— ${pageNo} / ${totalPages} —</div>
   </div>`;
 }
@@ -829,8 +885,8 @@ const SETTINGS_KEY = 'calc_print_settings';
 function saveSettings() {
   const toSave = {
     grade: state.grade, units: Array.from(state.units), reviewMix: state.reviewMix,
-    format: state.format, hyakuUnit: state.hyakuUnit, count: state.count, columns: state.columns,
-    showNameDate: state.showNameDate, showTime: state.showTime, showWorkspace: state.showWorkspace,
+    format: state.format, hyakuUnit: state.hyakuUnit, level: state.level, count: state.count, columns: state.columns,
+    showNameDate: state.showNameDate, showTime: state.showTime, showWorkspace: state.showWorkspace, showStamp: state.showStamp,
     answerMode: state.answerMode, sets: state.sets,
   };
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(toSave)); } catch (e) {}
@@ -845,11 +901,13 @@ function loadSettings() {
     state.reviewMix = !!saved.reviewMix;
     state.format = saved.format === 'hyaku' ? 'hyaku' : 'list';
     state.hyakuUnit = ['add', 'sub', 'mul'].includes(saved.hyakuUnit) ? saved.hyakuUnit : 'add';
+    state.level = [1, 2, 3].includes(saved.level) ? saved.level : 2;
     state.count = [10, 20, 30].includes(saved.count) ? saved.count : 20;
     state.columns = saved.columns === 1 ? 1 : 2;
     state.showNameDate = saved.showNameDate !== false;
     state.showTime = saved.showTime !== false;
     state.showWorkspace = saved.showWorkspace !== false;
+    state.showStamp = saved.showStamp !== false;
     state.answerMode = saved.answerMode === 'none' ? 'none' : 'with';
     state.sets = Math.min(5, Math.max(1, saved.sets || 3));
   } catch (e) {}
